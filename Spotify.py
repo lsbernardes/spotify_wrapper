@@ -7,26 +7,31 @@ import base64
 import datetime
 import json
 import os
-import webbrowser
 from sys import exit
-from colorama import Back, Fore, init, Style
+try:
+    import webbrowser
+    from colorama import Back, Fore, init, Style
+except:
+    print('Colorama e webbrowser não instalados')
 
 class spotify:
-    COR1 = Back.WHITE + Fore.BLACK
+#     COR1 = Back.WHITE + Fore.BLACK
     TOKEN = 'https://accounts.spotify.com/api/token'
     AUTH = 'https://accounts.spotify.com/authorize'
     REDIR = 'http://example.com/callback/'
     SCOPE = 'user-library-read user-read-private'
-    PATH = os.getenv('PYTHON_DEV')
+#     PATH = os.getenv('PYTHON_DEV')
+    PATH = '/home/jovyan/spotify_wrapper'
 
     def __init__(self, ID=False, SECRET=False):
-        self.BASIC = os.path.join(PATH, './json/basic_spotify.json')    
-        self.CRED = os.path.join(PATH, './json/credential_spotify.json')
+        self.BASIC = os.path.join(self.PATH, './json/basic_spotify.json')    
+        self.CRED = os.path.join(self.PATH, './json/credential_spotify.json')
         self.NOW = datetime.datetime.now()
         self.CODE = None
         self.REFRESH = None
         self.ACCESS = None
         self.TMP = []
+        self.ERROR = False
 
         if os.path.exists(self.BASIC) and os.path.getsize(self.BASIC) > 0:
             with open(self.BASIC, 'r') as f:
@@ -58,12 +63,28 @@ class spotify:
         authQry = urlencode({ 'client_id': self.ID, 'response_type': 'code', 'redirect_uri': self.REDIR, 'scope': self.SCOPE })
         urlAuth = '{}?{}'.format(self.AUTH, authQry)
         print(urlAuth)
-        webbrowser.open(urlAuth)
+#         webbrowser.open(urlAuth)
         authCode = input('\n' + 'Pressione ENTER quando houver copiado a URL')
-        authCode = pyperclip.paste()
+#         authCode = pyperclip.paste()
         self.CODE = authCode.partition('=')[2]
+        print(self.CODE)
         self.getToken()
-    
+
+    def getToken(self, refresh=False):
+        # constructing header
+        base = bytes('{}:{}'.format(self.ID, self.SECRET), 'UTF-8')
+        basecode = base64.b64encode(base)
+        basecode = basecode.decode('UTF-8')
+        head = 'Basic {}'.format(basecode)
+        self.header = { 'Authorization': head }
+
+        if not refresh or (not self.EXP or self.NOW > self.EXP):
+            authQuery = { 'grant_type': 'authorization_code', 'code': self.CODE , 'redirect_uri': self.REDIR }
+            self.token('Expired or not existent, getting a new Token...', authQuery)
+        else:
+            authQuery = { 'grant_type': 'refresh_token', 'refresh_token': self.REFRESH }
+            self.token('Refreshing Token...', authQuery)
+
     def token(self, msg, authQuery):
             print('\n%s' % msg)
             url_token = requests.post(self.TOKEN, data=authQuery, headers=self.header)
@@ -88,26 +109,7 @@ class spotify:
                 except:
                     print('Problemas gravando o arquivo JSON')
 
-    def getToken(self, refresh=False):
-        if not refresh:
-            authQuery = { 'grant_type': 'authorization_code', 'code': self.CODE , 'redirect_uri': self.REDIR }
-        else:
-            authQuery = { 'grant_type': 'refresh_token', 'refresh_token': self.REFRESH }
-
-        # constructing header
-        base = bytes('{}:{}'.format(self.ID, self.SECRET), 'UTF-8')
-        basecode = base64.b64encode(base)
-        basecode = basecode.decode('UTF-8')
-        head = 'Basic {}'.format(basecode)
-        self.header = { 'Authorization': head }
-        
-        if 'authorization_code' in authQuery['grant_type'] or (not self.EXP or self.NOW > self.EXP):
-            self.token('Expired or not existent, getting a new Token...', authQuery)
-
-        elif 'refresh_token' in authQuery['grant_type'] or (self.EXP and self.NOW < self.EXP):
-            self.token('Refreshing Token...', authQuery)
-
-    def getLikedSongs(self):
+    def getLikedSongs(self, hide=False):
         ''' Baixar a playlista das minhas músicas salvas em SONGS '''
         self.TMP = []
         offset = 0
@@ -117,9 +119,10 @@ class spotify:
         url_token = requests.get(cmd, params=query, headers=header)
         
         command_data = url_token.json()
-        print(json.dumps(command_data, indent=2))
+        print(json.dumps(command_data, indent=2, ensure_ascii=False))
         limite = command_data['total'] 
-        self.TMP.append(command_data)
+        if not hide:
+            self.TMP.append(command_data)
         
         while offset < limite:
             offset += 50
@@ -127,10 +130,17 @@ class spotify:
             url_token = requests.get(cmd, params=query, headers=header)
             command_data = url_token.json()
             self.TMP.append(command_data)
+            if 'error' in command_data.keys():
+                self.ERROR = True
+        
+            if not hide:
+                json.dumps(command_data, indent=2, ensure_ascii=False)
 
-            json.dumps(command_data, indent=2)
-
-        name_f = 'saved.json'
-        with open(name_f, 'w') as f:
-            json.dump(self.TMP, f)
-        print('SAVED SONGS salvas')
+        if self.ERROR:
+            print('Erro ao baixar informação. Função será executada de novo!')
+            self.getLikedSongs()
+        else:
+            name_f = 'saved.json'
+            with open(name_f, 'w') as f:
+                json.dump(self.TMP, f, ensure_ascii=False)
+            print('SAVED SONGS salvas')
