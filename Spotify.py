@@ -4,7 +4,7 @@
 LANGUAGE = { 
             'eng': 
                 { 
-                1: 'Packages "webbrowser" and "pyperclip" must be installed', 
+                1: 'Package "pyperclip" must be installed', 
                 2: 'Obtaining Authorization code...',
                 3: 'There is no basic credentials to use Spotify API',
                 4: 'Refresh token existent!',
@@ -14,11 +14,13 @@ LANGUAGE = {
                 8: 'ERROR: status code {}',
                 9: 'Authorization code expired, trying to obtain a new authorization code...',
                 10: 'Problem generating the JSON file',
-                11: 'LIKED SONGS stored'
+                11: 'JSON file containing information about the playlist LIKED SONGS stored',
+                12: 'First it is necessary to run getLikedSongs() method to obtain the informations',
+                13: 'JSON file containing a list of artist and tracks from LIKED SONGS stored'
                 },
             'pt-br':
                 { 
-                1: 'Os pacotes "webbrowser" e "pyperclip" precisam ser instalados', 
+                1: 'O pacote "pyperclip" precisa ser instalado', 
                 2: 'Obtendo Código de autorização...',
                 3: 'Não há credenciais básicas para usar a API do Spotify',
                 4: 'Parêmtro "Refresh token" existe',
@@ -28,30 +30,31 @@ LANGUAGE = {
                 8: 'ERRO: código {}',
                 9: 'Código de autorização expirado, tentando obter um novo código de autorização...',
                 10: 'Problemas gravando o arquivo JSON',
-                11: 'LIKED SONGS gravado'
+                11: 'Arquivo JSON contendo informações sobre a playlist LIKED SONGS gravado',
+                12: 'Primeiro é necessário executar o método getLikedSongs() para conseguir as informações',
+                13: 'Arquivo JSON contendo a lista de artistas e faixas da playlist LIKED SONGS gravado'
                 }
             
             }
 
 set_LANG = 'eng'
-try:
-    PATH = os.getenv('PYTHON_DEV')
-except:
-    PATH = os.getcwd()
 
 import requests
-from urllib.parse import urlencode, urlparse
 import base64
 import datetime
 import json
 import os
+import webbrowser
+from urllib.parse import urlencode, urlparse
 from sys import exit
 try:
-    import webbrowser
     import pyperclip
 except:
     print(LANGUAGE[set_LANG][1])
     exit()
+
+PATH = os.getcwd() if os.getenv('PYTHON_DEV') is None else os.getenv('PYTHON_DEV')
+# PATH = 'choose/the/path'
 
 class spotify:
     TOKEN = 'https://accounts.spotify.com/api/token'
@@ -202,11 +205,23 @@ class spotify:
         print(LANGUAGE[set_LANG][11])
         
     def list_songs(self):
-        ''' Show an enumarated list of the Liked Songs '''
+        ''' Show an enumarated list of the Liked Songs and store it into a JSON file'''
 
+        if len(self.TMP) == 0:
+            print(LANGUAGE[set_LANG][12])
+            return 
+
+        list_songs = { 'date': str(datetime.datetime.now()), 'songs': [] }
         num = 1
         for i in self.TMP:
             for item in i['items']:
-                print('{} {}: {}'.format(num, item['track']['artists'][0]['name'], item['track']['name']))
+                artist = item['track']['artists'][0]['name']
+                track = item['track']['name']
+                print('{} {}: {}'.format(num, artist, track))
+                list_songs['songs'].append({ track: artist })
                 num += 1
 
+        with open('list_LikedSong.json', 'w') as f:
+            json.dump(list_songs, f, ensure_ascii=False)
+
+        print(LANGUAGE[set_LANG][13])
