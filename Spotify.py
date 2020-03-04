@@ -4,7 +4,7 @@
 LANGUAGE = { 
             'eng': 
                 { 
-                1: '"webbrowser" not installed', 
+                1: 'Packages "webbrowser" and "pyperclip" must be installed', 
                 2: 'Obtaining Authorization code...',
                 3: 'There is no basic credentials to use Spotify API',
                 4: 'Refresh token existent!',
@@ -15,10 +15,10 @@ LANGUAGE = {
                 9: 'Authorization code expired, trying to obtain a new authorization code...',
                 10: 'Problem generating the JSON file',
                 11: 'LIKED SONGS stored'
-                }
+                },
             'pt-br':
                 { 
-                1: '"webbrowser" não instalado', 
+                1: 'Os pacotes "webbrowser" e "pyperclip" precisam ser instalados', 
                 2: 'Obtendo Código de autorização...',
                 3: 'Não há credenciais básicas para usar a API do Spotify',
                 4: 'Parêmtro "Refresh token" existe',
@@ -34,6 +34,10 @@ LANGUAGE = {
             }
 
 set_LANG = 'eng'
+try:
+    PATH = os.getenv('PYTHON_DEV')
+except:
+    PATH = os.getcwd()
 
 import requests
 from urllib.parse import urlencode, urlparse
@@ -44,25 +48,27 @@ import os
 from sys import exit
 try:
     import webbrowser
+    import pyperclip
 except:
     print(LANGUAGE[set_LANG][1])
+    exit()
 
 class spotify:
     TOKEN = 'https://accounts.spotify.com/api/token'
     AUTH = 'https://accounts.spotify.com/authorize'
     REDIR = 'http://example.com/callback/'
     SCOPE = 'user-library-read user-read-private'
-    PATH = os.getenv('PYTHON_DEV')
 
     def __init__(self, ID=False, SECRET=False):
-        self.BASIC = os.path.join(self.PATH, './json/basic_spotify.json')    
-        self.CRED = os.path.join(self.PATH, './json/credential_spotify.json')
+        self.BASIC = os.path.join(PATH, 'basic_spotify.json')    
+        self.CRED = os.path.join(PATH, 'credential_spotify.json')
         self.NOW = datetime.datetime.now()
         self.CODE = None
         self.REFRESH = None
         self.ACCESS = None
         self.TMP = []
         self.ERROR = False
+        self.EXP = False
 
         if ID and SECRET:
             self.ID = ID
@@ -76,11 +82,6 @@ class spotify:
             self.SECRET = self.BASIC_TMP['client_secret']
             self.check_credentials()
 
-            else: 
-                print(LANGUAGE[set_LANG][2])
-                self.EXP = False
-                self.STOR = None
-                self.auth()
         else:
             print(LANGUAGE[set_LANG][3])
             exit()
@@ -89,14 +90,21 @@ class spotify:
         if os.path.exists(self.CRED) and os.path.getsize(self.CRED) > 0:
             with open(self.CRED, 'r') as f:
                 self.STOR = json.load(f)
-                
             self.EXP = self.NOW > eval(self.STOR['expires'])
             self.ACCESS = self.STOR['access_token']
             self.CODE = self.STOR['code']
+
             if 'refresh_token' in self.STOR.keys():
                 self.REFRESH = self.STOR['refresh_token']
                 print(LANGUAGE[set_LANG][4])
-
+            else: 
+                print(LANGUAGE[set_LANG][2])
+                self.EXP = False
+                self.STOR = None
+                self.auth()
+        else:
+            self.auth()
+    
     def auth(self):
         authQry = urlencode({ 'client_id': self.ID, 'response_type': 'code', 'redirect_uri': self.REDIR, 'scope': self.SCOPE })
         urlAuth = '{}?{}'.format(self.AUTH, authQry)
@@ -160,7 +168,7 @@ class spotify:
             return False
     
     def getLikedSongs(self, hide=False):
-        ''' Baixar a playlista das minhas músicas salvas em SONGS '''
+        ''' Download the playlist of LIKED SONGS '''
 
         self.TMP = []
         cmd = 'https://api.spotify.com/v1/me/tracks'
