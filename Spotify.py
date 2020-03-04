@@ -37,6 +37,7 @@ LANGUAGE = {
             
             }
 
+# You can set this variable to 'pt-br' in order to prompt the user messages in Portuguese
 set_LANG = 'eng'
 
 import requests
@@ -53,7 +54,7 @@ except:
     print(LANGUAGE[set_LANG][1])
     exit()
 
-PATH = os.getcwd() if os.getenv('PYTHON_DEV') is None else os.getenv('PYTHON_DEV')
+PATH = os.getcwd() if os.getenv('PY_SPOTIFY') is None else os.getenv('PY_SPOTIFY')
 # PATH = 'choose/the/path'
 
 class spotify:
@@ -181,6 +182,7 @@ class spotify:
         url_token = requests.get(cmd, params=query, headers=header)
         command_data = url_token.json()
         if self.testExpired(command_data):
+            header = { 'Authorization': 'Bearer {}'.format(self.ACCESS) }
             url_token = requests.get(cmd, params=query, headers=header)
             command_data = url_token.json()
             
