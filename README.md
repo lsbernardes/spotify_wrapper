@@ -30,6 +30,8 @@ Then it's necessary to create a instance of this class:
 
 To this object you can apply two class methods: `getLikedSongs()` and `list_songs()`. The class method `getLikedSongs()` will return the JSON response to the request made to the endpoint, as such:
 
+    In [3]: spt.getLikedSongs()
+    
     'href': 'https://api.spotify.com/v1/albums/6P4wMdPtRficqe9zTxm7jL',
      'id': '6P4wMdPtRficqe9zTxm7jL',
      'images': [{'height': 640,
@@ -64,6 +66,8 @@ This method will also store this information inside a JSON file called 'LikeSong
 
 The second class method `list_songs()` can only be executed once the first one has been executed, because it depends on information gathered by it. It will return an enumerated list of artists and tracks, sorted by the most recent added to your Liked Songs playlists. Here is an example of its output:
 
+    In [4]: spt.list_songs()
+    
     1 Stromae: Alors on danse
     2 José James: Just The Way You Are
     3 Aaron Taylor: Blue
@@ -75,7 +79,6 @@ The second class method `list_songs()` can only be executed once the first one h
     
 This method will also store the output into a JSON file called 'list_LikedSong.json'.
 
+At last, it is possible to change to Portuguese the language of the messages prompted to the user, to do that you need to change the variable `set_LANG` to `pt-br`.
+
 This is it, I hope soon enough I could add more methods to this wrapper.
-
-
-
