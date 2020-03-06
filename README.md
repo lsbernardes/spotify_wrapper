@@ -18,7 +18,7 @@ With pip you can install it with this command:
 Usage
 --------
 
-It's necessary to have a basic credential to use Spotify API, [here you can find information](https://developer.spotify.com/documentation/general/guides/app-settings/) about how to create and APP and obtain a Client ID and a Client Secret. The `PATH` variable inside the code is configured to look for an environment variable called `PY_SPOTIFY` and if it doesn't find it will set the value of this variable to the current directory (using `os.getcwd`). These are two essential things to have in mind in order to use the script. 
+It's necessary to have a basic credential to use Spotify API, [here you can find information](https://developer.spotify.com/documentation/general/guides/app-settings/) about how to create an APP and obtain a Client ID and a Client Secret. The `PATH` variable inside the code is configured to look for an environment variable called `PY_SPOTIFY` and if it doesn't find it will set the value of this variable to the current directory (using `os.getcwd`). These are two essential things to have in mind in order to use the script. 
 
 After that, to start using **spotify_wrapper** you need to run the script inside Python shell, it only works inside the shell (I'm using IPython):
   
